@@ -1,0 +1,127 @@
+We need to learn more about this accuracy trade-off before we can properly decide if bloom filters are useful for your use case. 
+
+An important property of a Bloom filter is that it never returns a false negative, but it can return false positives. If these terms are unclear to you:
+
+A false negative: the filter says the element is not part of the set, while in fact, it is. This won’t happen because of how Bloom filters work internally.
+A false positive: the filter says the element is part of the set, while in reality, it is not. This can happen, and you should account for it in your code/algorithms.
+In even simpler words, a query on a Bloom filter can return a “this element is possibly in the set” or a “this element is definitely not in the set.”
+
+The fact that they can return false positives is the accuracy trade-off I was talking about. If you can live with less than 100% accuracy, bloom filters are a great way to save time and memory.
+
+The sieve analogy
+You can compare Bloom filters with a sieve, specially formed to only let through certain elements:
+
+The known elements will fit the holes in the sieve and fall through.
+Even though they’ve never been seen before, some elements will fit the holes in the sieve too and fall through. These are our false positives.
+Other elements, never seen before, won’t fall through: the negatives.
+The sieve is a nice analogy for bloom filters
+Bloom filters can be compared to a sieve, only letting through elements it has been trained to let through. Image source
+Controlling accuracy with memory
+The more memory you give a bloom filter, the more accurate it will become. Why’s that? Simple: the more memory it has to store data in, the more information it can store, and the more accurate it can be. 
+
+But, of course, we use a Bloom filter to save memory, so you need to find a balance between memory usage and the number of false positives that are acceptable.
+
+Given these facts, you may already get a feeling for when to use a Bloom filter. In general terms, you use them to reduce the load on a system by reducing expense lookups in some data tables at a moderate memory expense. This data table can be anything. Some examples:
+
+A database
+A filesystem
+Some kind of key-value storage
+An example use-case
+Let’s look at an example use-case to better understand how Bloom filters in Python can help.
+
+Imagine a large, multi-machine, networked database. Each lookup for a record in that distributed database requires, at its worst, querying multiple machines at once. On each machine, a lookup means accessing large data structures stored on a disk. As you know, disk access, together with networking, is one of the slowest operations in computer science.
+
+
+ 
+Now imagine that each machine uses a bloom filter, trained with the records stored on disk. Before accessing any data structure on disks, the machine first checks the filter. If it gives a negative, we can be certain that this machine does not store that record, and we can return this result without accessing disks at all.
+
+If a bloom filter can prevent 80% of these disk lookups, in exchange for some extra memory usage, that may be well worth it! Even if the filter would save us only 30% of disk lookups, that may still be an enormous increase in speed and efficiency.
+
+Choosing the trade-off
+We do need to find an optimum between saving memory and saving time and CPU cycles.
+
+In our example code, we initialize a Python Bloom filter by giving a number of elements and an error rate: 
+
+b = BloomFilter(max_elements=1000, error_rate=0.1)
+We’re basically saying: we expect to store a maximum of 1000 elements, and we can accept a 0.1 error rate, which means that 10% of the lookups might give a false positive. The library will calculate the proper size for us now.
+
+How do bloom filters work?
+By now, you know enough to use bloom filters without even knowing how they work internally. This section will touch on the basics and leave you with some links to dive in deeper if you want.
+
+A Bloom filter is an array of bits, all set to 0 initially. The more bits there are, the more the filter can store. If you add an element, this element is hashed with multiple hash functions. The hashing result determines which bits in the filter are set to 1. If a bit was already set to one, it’s left like that.
+
+We can now look at two extremes: an empty filter, and a completely saturated one.
+
+Empty Bloom filter
+If the filter is empty, all array bits are zero. imagine a new element w, which we haven’t seen before and was not added to the Bloom filter before. When we ask if w is in the filter, the following happens:
+
+The element w is hashed
+The result is checked against the positions in the filter
+Everything is set to zero, so the Bloom filter returns a negative: w not in the set.
+A saturated Bloom filter
+The more elements you add to the filter, the more bits are set to one. Until, eventually, all bits are 1. If we check our unknown element w again, this happens:
+
+The element w is hashed
+The result is checked against the positions in the filter
+Because all positions are 1, the filter returns a positive: w is part of the set according to this Bloom filter
+And the filter will keep returning false positives, whatever you feed it.
+
+A well functioning Bloom filter
+If we add a proper amount of elements, say x, y, and z, the filter will function optimally. In the image below, our hashed elements will set some of the positions in our filter to 1. If we check our unknown element w against the filter, some of the positions will be 1, but one of them is 0. That’s why the filter can assure us this element is not part of the set.
+
+A bloom filter at work
+{ x, y, z } are hashed and added to the filter. w is hashed and checked against the filter. Because one of the positions is zero, the filter knows w is not in the set. Public domain image from Wikipedia.
+How much will a Bloom filter save me?
+There’s no simple answer to this question. Your best bet is to test your code with and without them extensively. Sometimes Bloom filters can be an enormous help, but there are also cases in which they are not that efficient. See the last link below, for example.
+
+Keep learning
+Here are some resources that help you to learn more about Bloom filters and how they are used. I also included the original paper by Bloom himself and an article on the Cloudflare blog that shows when Bloom filters are not the best choice:
+
+Wikipedia’s Bloom filter article
+Space/Time Trade-offs in Hash Coding with Allowable Errors, Burton Howard Bloom, 1970.
+Theory and Practice of Bloom Filters for Distributed Systems, Sasu Tarkoma, Christian Esteve Rothenberg, and Eemil Lagerspetz, 2011
+When Bloom filters don’t Bloom, Marek Majkowski (Cloudflare), 2020.
+
+ 
+About Erik van Baaren
+
+Erik is the owner of Python Land and the author of many of the articles and tutorials on this website. He's been working as a professional software developer for 25 years, and he holds a Master of Science degree in computer science. His favorite language of choice: Python! Writing good articles takes time and effort. Did you like this tutorial? You can buy him a coffee to show your appreciation.
+
+Leave a Comment
+You must be logged in to post a comment.
+
+Python Tutorial for Beginners
+Install Python
+Introduction to Python
+Creating Python Programs
+Classes and Objects in Python
+Structure Your Project
+Python Data Types
+Language Deep Dives
+Interaction with the OS
+Venvs / Package Management
+Python Concurrency
+Data Processing with Python
+Migrating From Python 2 to 3
+Using The Unix Shell
+Deployment
+Data Science
+Python Learning Resources
+Bloom filter in Python
+What does a bloom filter offer us?
+When to use a bloom filter?
+The sieve analogy
+Controlling accuracy with memory
+An example use-case
+Choosing the trade-off
+How do bloom filters work?
+How much will a Bloom filter save me?
+Keep learning
+
+ 
+Subscribe to my newsletter to get updates from Python Land
+
+
+Email Address: 
+ 
+©2022 Python.land - All rights reserved - Privacy policy
